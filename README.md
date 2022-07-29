@@ -50,7 +50,7 @@ usedProofs(bytes32 _bytes32)
 
 OWNER_ROLE = 0x0eddb5b75855602b7383774e54b0f5908801044896417c7278d8b72cd62555b6 
 
-含义：就算是暂停，此角色里的人也是可以操作的如解锁,销毁
+含义：就算是暂停，此角色里的人也是可以操作的如解锁,铸造
 
 CONTROLLED_ROLE = 0x8f2157482fb2324126e5fbc513e0fe919cfa878b0f89204823a63a35805d67de  
 
