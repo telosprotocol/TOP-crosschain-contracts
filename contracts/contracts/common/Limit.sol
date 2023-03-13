@@ -11,6 +11,8 @@ contract Limit is AccessControl{
     bytes32 constant private FORBIDEN_ROLE = 0x3ae7ceea3d592ba264a526759c108b4d8d582ba37810bbb888fcee6f32bbf04d;
     //keccak256("ADMIN.ROLE");
     bytes32 constant ADMIN_ROLE = 0xa8a2e59f1084c6f79901039dbbd994963a70b36ee6aff99b7e17b2ef4f0e395c;
+    //keccak256("DAO.ADMIN.ROLE");
+    bytes32 constant DAO_ADMIN_ROLE = 0xba89994fffa21b6259d0e98b52260f21bc06a07249825a4125b51c20e48d06ff;
 
     struct Quota{
         uint256 maxTransferedToken;
@@ -27,6 +29,10 @@ contract Limit is AccessControl{
         bytes32 _forbiddenId
     );
 
+    event TxRecovered (
+        bytes32 _forbiddenId
+    );
+
     event FrozenBound (
         address indexed asset, 
         uint  frozenDuration
@@ -39,9 +45,8 @@ contract Limit is AccessControl{
 
     constructor(address owner){
         _setRoleAdmin(ADMIN_ROLE, OWNER_ROLE);
-        
         _setRoleAdmin(FORBIDEN_ROLE, ADMIN_ROLE);
-
+        _setRoleAdmin(DAO_ADMIN_ROLE, ADMIN_ROLE);
         _grantRole(OWNER_ROLE, owner);
         _grantRole(ADMIN_ROLE,_msgSender());
     }
@@ -78,11 +83,19 @@ contract Limit is AccessControl{
     }
 
     function forbiden(
-        bytes32 _forbiddenId
+        bytes32 _receiptId
     ) external onlyRole(FORBIDEN_ROLE) {
-        require(forbiddens[_forbiddenId] == false, "id has been already forbidden");
-        forbiddens[_forbiddenId] = true;
-        emit TxForbidden(_forbiddenId);
+        require(forbiddens[_receiptId] == false, "id has been already forbidden");
+        forbiddens[_receiptId] = true;
+        emit TxForbidden(_receiptId);
+    }
+
+    function recover(
+        bytes32 _receiptId
+    ) public onlyRole(DAO_ADMIN_ROLE) {
+        require(forbiddens[_receiptId], "id has not been forbidden");
+        delete(forbiddens[_receiptId]);
+        emit TxRecovered(_receiptId);
     }
 
     function bindFrozen(
@@ -102,7 +115,7 @@ contract Limit is AccessControl{
         return block.timestamp >= _timestamp + tokenFrozens[_asset];
     }
 
-    function renounceRole(bytes32 role, address account) public pure override {
+    function renounceRole(bytes32 /*role*/, address /*account*/) public pure override {
         require(false, "not support");
     }
 }
