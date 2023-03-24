@@ -205,4 +205,8 @@ contract TopBridge is  ITopBridge, AdminControlledUpgradeable {
         require(( isPause(PAUSED_ADD_BLOCK) && hasRole(ADDBLOCK_ROLE,_msgSender())),"without permission");
         _;
     }
+
+    function is_confirmed(uint256 height, bytes32 hash) public view returns (bool confirmed) {
+        confirmed = blockHashes[hash];
+    }
 }
