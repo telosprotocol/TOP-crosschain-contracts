@@ -2,9 +2,10 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 //import "hardhat/console.sol";
 
-contract Limit is AccessControl{
+contract Limit is Initializable, AccessControl{
     //keccak256("OWNER.ROLE");
     bytes32 constant private OWNER_ROLE = 0x0eddb5b75855602b7383774e54b0f5908801044896417c7278d8b72cd62555b6;
     //keccak256("FORBIDEN.ROLE");
@@ -43,7 +44,17 @@ contract Limit is AccessControl{
     mapping(address => uint) public tokenFrozens; // unit is seconds
     uint private constant MAX_FROZEN_TIME = 15_552_000; //180 days
 
-    constructor(address owner){
+    // constructor(address owner){
+    //     _setRoleAdmin(ADMIN_ROLE, OWNER_ROLE);
+    //     _setRoleAdmin(FORBIDEN_ROLE, ADMIN_ROLE);
+    //     _setRoleAdmin(DAO_ADMIN_ROLE, ADMIN_ROLE);
+    //     _grantRole(OWNER_ROLE, owner);
+    //     _grantRole(ADMIN_ROLE,_msgSender());
+    // }
+
+    function _Limit_initialize(
+        address owner
+    ) external initializer {
         _setRoleAdmin(ADMIN_ROLE, OWNER_ROLE);
         _setRoleAdmin(FORBIDEN_ROLE, ADMIN_ROLE);
         _setRoleAdmin(DAO_ADMIN_ROLE, ADMIN_ROLE);
