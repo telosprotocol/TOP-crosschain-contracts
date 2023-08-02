@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./TimestampGovernorSettings.sol";
-import "./TimestampGovernorCompatibilityBravo.sol";
-import "./TimestampGovernorVotes.sol";
-import "./TimestampGovernorVotesQuorumFraction.sol";
-import "./TimestampGovernorTimelockControl.sol";
+import "@openzeppelin/contracts/governance/Governor.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
+import "@openzeppelin/contracts/governance/compatibility/GovernorCompatibilityBravo.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../common/AdminControlledUpgradeable.sol";
 
-contract TDao is TimestampGovernorCompatibilityBravo, TimestampGovernorVotes, TimestampGovernorVotesQuorumFraction, TimestampGovernorSettings, TimestampGovernorTimelockControl, AdminControlledUpgradeable {
+contract EDao is GovernorCompatibilityBravo, GovernorVotes, GovernorVotesQuorumFraction, GovernorSettings, GovernorTimelockControl, AdminControlledUpgradeable {
     uint256 constant UNPAUSED_ALL = 0;
     uint256 constant PAUSED_PROPOSE = 1 << 0;
     uint256 constant PAUSED_QUEUE = 1 << 1;
@@ -29,11 +30,11 @@ contract TDao is TimestampGovernorCompatibilityBravo, TimestampGovernorVotes, Ti
 
     constructor(IVotes vote_, uint256 voteDelay_, uint256 votePeriod_, uint256 quorumNumerator_, TimelockController timelock_, 
         address owner_, uint256 minVoteDelay_, uint256 maxVoteDelay_, uint256 minVotePeriod_, uint256 maxVotePeriod_)
-        TimestampGovernor("TDao")
-        TimestampGovernorVotes(vote_)
-        TimestampGovernorSettings(voteDelay_, votePeriod_, 1)
-        TimestampGovernorVotesQuorumFraction(quorumNumerator_)
-        TimestampGovernorTimelockControl(timelock_)
+        Governor("TDao")
+        GovernorVotes(vote_)
+        GovernorSettings(voteDelay_, votePeriod_, 1)
+        GovernorVotesQuorumFraction(quorumNumerator_)
+        GovernorTimelockControl(timelock_)
         initializer
     {
         require(Address.isContract(address(vote_)), "voter token must be existed");
@@ -60,10 +61,10 @@ contract TDao is TimestampGovernorCompatibilityBravo, TimestampGovernorVotes, Ti
     function proposalThreshold() 
         public 
         view 
-        override(TimestampGovernor, TimestampGovernorSettings)
+        override(Governor, GovernorSettings)
         returns (uint256) 
     {
-        return TimestampGovernorSettings.proposalThreshold();
+        return GovernorSettings.proposalThreshold();
     }
 
     function setProposalThreshold(uint256 newProposalThreshold) 
@@ -76,7 +77,7 @@ contract TDao is TimestampGovernorCompatibilityBravo, TimestampGovernorVotes, Ti
         require(success, "fail to call getMaxPersonalVotes");
         uint256 threshold = abi.decode(result,(uint256));
         require(newProposalThreshold <= threshold, "threshold is overflow");
-        TimestampGovernorSettings.setProposalThreshold(newProposalThreshold);
+        GovernorSettings.setProposalThreshold(newProposalThreshold);
     }
 
     function setVotingDelay(uint256 newVotingDelay) 
@@ -113,7 +114,7 @@ contract TDao is TimestampGovernorCompatibilityBravo, TimestampGovernorVotes, Ti
     function quorum(uint256 blockNumber)
         public
         view
-        override(IGovernor, TimestampGovernorVotesQuorumFraction)
+        override(IGovernor, GovernorVotesQuorumFraction)
         returns (uint256)
     {
         return (token.getPastTotalSupply(blockNumber) * quorumNumerator() + quorumDenominator() - 1) / quorumDenominator();
@@ -122,31 +123,31 @@ contract TDao is TimestampGovernorCompatibilityBravo, TimestampGovernorVotes, Ti
     function getVotes(address account, uint256 blockNumber)
         public
         view
-        override(IGovernor, TimestampGovernorVotes)
+        override(IGovernor, GovernorVotes)
         returns (uint256)
     {
-        return TimestampGovernorVotes.getVotes(account, blockNumber);
+        return GovernorVotes.getVotes(account, blockNumber);
     }
 
     function state(uint256 proposalId)
         public
         view
-        override(TimestampGovernor, IGovernor, TimestampGovernorTimelockControl)
+        override(Governor, IGovernor, GovernorTimelockControl)
         returns (ProposalState)
     {
-        return TimestampGovernorTimelockControl.state(proposalId);
+        return GovernorTimelockControl.state(proposalId);
     }
 
     function propose(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description)
         public
-        override(TimestampGovernor, TimestampGovernorCompatibilityBravo, IGovernor) accessable_and_unpauseable(BLACK_ROLE, PAUSED_PROPOSE)
+        override(Governor, GovernorCompatibilityBravo, IGovernor) accessable_and_unpauseable(BLACK_ROLE, PAUSED_PROPOSE)
         returns (uint256)
     {
         require(targets.length <=  proposalMaxOperations, "too many actions");
         for (uint256 i = 0; i < targets.length; i++) {
             require(Address.isContract(targets[i]), "invalid contract");
         }
-        return TimestampGovernorCompatibilityBravo.propose(targets, values, calldatas, description);
+        return GovernorCompatibilityBravo.propose(targets, values, calldatas, description);
     }
 
     function propose(address[] memory targets, uint256[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) 
@@ -158,22 +159,22 @@ contract TDao is TimestampGovernorCompatibilityBravo, TimestampGovernorVotes, Ti
         for (uint256 i = 0; i < targets.length; i++) {
             require(Address.isContract(targets[i]), "invalid contract");
         }
-        return TimestampGovernorCompatibilityBravo.propose(targets, values, signatures, calldatas, description);
+        return GovernorCompatibilityBravo.propose(targets, values, signatures, calldatas, description);
     }
 
     function queue(uint256 proposalId) 
         public
         override accessable_and_unpauseable(BLACK_ROLE, PAUSED_QUEUE)
     {
-        TimestampGovernorCompatibilityBravo.queue(proposalId);
+        GovernorCompatibilityBravo.queue(proposalId);
     }
 
     function queue(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash) 
         public
-        override(TimestampGovernorTimelockControl, IGovernorTimelock) accessable_and_unpauseable(BLACK_ROLE, PAUSED_QUEUE)
+        override(GovernorTimelockControl, IGovernorTimelock) accessable_and_unpauseable(BLACK_ROLE, PAUSED_QUEUE)
         returns (uint256)
     {
-        return TimestampGovernorTimelockControl.queue(targets, values, calldatas, descriptionHash);
+        return GovernorTimelockControl.queue(targets, values, calldatas, descriptionHash);
     }
 
     function execute(uint256 proposalId) 
@@ -181,56 +182,56 @@ contract TDao is TimestampGovernorCompatibilityBravo, TimestampGovernorVotes, Ti
         payable
         override accessable_and_unpauseable(BLACK_ROLE, PAUSED_EXECUTE)
     {
-        TimestampGovernorCompatibilityBravo.execute(proposalId);
+        GovernorCompatibilityBravo.execute(proposalId);
     }
 
     function cancel(uint256 proposalId) 
         public
         override accessable_and_unpauseable(BLACK_ROLE, PAUSED_CANCEL)
     {
-        TimestampGovernorCompatibilityBravo.cancel(proposalId);
+        GovernorCompatibilityBravo.cancel(proposalId);
     }
 
     function castVote(uint256 proposalId, uint8 support) 
         public 
-        override(TimestampGovernor, IGovernor) accessable_and_unpauseable(BLACK_ROLE, PAUSED_VOTE)
+        override(Governor, IGovernor) accessable_and_unpauseable(BLACK_ROLE, PAUSED_VOTE)
         returns (uint256) 
     {
-        return TimestampGovernor.castVote(proposalId, support);
+        return Governor.castVote(proposalId, support);
     }
 
     function _execute(uint256 proposalId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
         internal
-        override(TimestampGovernor, TimestampGovernorTimelockControl)
+        override(Governor, GovernorTimelockControl)
     {
-        TimestampGovernorTimelockControl._execute(proposalId, targets, values, calldatas, descriptionHash);
+        GovernorTimelockControl._execute(proposalId, targets, values, calldatas, descriptionHash);
     }
 
     function _cancel(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
         internal
-        override(TimestampGovernor, TimestampGovernorTimelockControl)
+        override(Governor, GovernorTimelockControl)
         returns (uint256)
     {
-        return TimestampGovernorTimelockControl._cancel(targets, values, calldatas, descriptionHash);
+        return GovernorTimelockControl._cancel(targets, values, calldatas, descriptionHash);
     }
 
     function _executor()
         internal
         view
-        override(TimestampGovernor, TimestampGovernorTimelockControl)
+        override(Governor, GovernorTimelockControl)
         returns (address)
     {
-        return TimestampGovernorTimelockControl._executor();
+        return GovernorTimelockControl._executor();
     }
 
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(TimestampGovernor, IERC165, TimestampGovernorTimelockControl, AccessControl)
+        override(Governor, IERC165, GovernorTimelockControl, AccessControl)
         returns (bool)
     {
-        return TimestampGovernorTimelockControl.supportsInterface(interfaceId) || 
-               TimestampGovernor.supportsInterface(interfaceId) || 
+        return GovernorTimelockControl.supportsInterface(interfaceId) || 
+               Governor.supportsInterface(interfaceId) || 
                AccessControl.supportsInterface(interfaceId);
     }
 }
