@@ -218,11 +218,8 @@ contract TransparentProxy is ERC1967Proxy {
         return _getAdmin();
     }
 
-    /**
-     * @dev Makes sure the admin cannot access the fallback function. See {Proxy-_beforeFallback}.
-     */
-    function _beforeFallback() internal override {
-        require(msg.sender != _getAdmin(), "TransparentUpgradeableProxy: admin cannot fallback to proxy target");
-        super._beforeFallback();
-    }
+    // function _beforeFallback() internal override {
+    //     // require(msg.sender != _getAdmin(), "TransparentUpgradeableProxy: admin cannot fallback to proxy target");
+    //     super._beforeFallback();
+    // }
 }
