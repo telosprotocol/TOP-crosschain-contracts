@@ -17,7 +17,7 @@ library TopProofDecoder {
 
         uint64 blockIndex;
         uint64 polyBlockHeight;
-        bytes[] blockProof;  
+        bytes[] blockProof;
     }
 
     function decode(Borsh.Data memory data) internal pure returns (Proof memory proof) {
